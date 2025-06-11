@@ -2,14 +2,18 @@
 
 [***Habanero***](https://github.com/sckott/habanero/) wrapper.
 
-- backend: **Python** (*habanero*) using *socket-io Python*.
+- backend: **Python** (*habanero*) using *flask_socketio* and *flask*.
 
-- frontend (tests only): **Javascript** using *socket-io JS*.
+- frontend (tests only): **Javascript** using *socket.io* and *express*.
 
 The goal of this repository is to code a wrapper on the *Crossref API* client
 called *Habanero*.
 
-## TODO
+## Environment variables
+
+TODO
+
+## Production mode
 
 1. ``cd client_crossref/``
 
@@ -28,7 +32,23 @@ cd src/backend/ && python app.py
 ```bash
 # Open another terminal and do this:
 cd src/frontend/ && npm install
+
+# TODO
 ```
+
+## Security
+
+1. **HTTPS**:
+
+TODO (certificates)
+
+2. **Token authentication JWT**:
+
+TODO
+
+3. **CORS**:
+
+TODO
 
 ### EOF
 
