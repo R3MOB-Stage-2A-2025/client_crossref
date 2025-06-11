@@ -6,7 +6,7 @@ from flask_cors import CORS
 BACKEND_PORT: int = 5001
 BACKEND_SECRETKEY: str = "lol123test!"
 
-app = Flask(__name_)
+app = Flask(__name__)
 app.config['SECRET_KEY'] = BACKEND_SECRETKEY
 CORS(app, resources={r"/*": { "origins": "*" }})
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -27,8 +27,7 @@ def connected():
 def handle_message():
     """event listener when client types a message"""
     print("data from the front end: ", str(data))
-    emit("data", { 'data': data; 'id': request.sid }, broadcast=True)
-
+    emit("data", { 'data': data, 'id': request.sid }, broadcast=True)
 
 @socketio.on("disconnect")
 def disconnected():
