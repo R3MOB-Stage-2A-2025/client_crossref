@@ -2,9 +2,9 @@
 
 [***Habanero***](https://github.com/sckott/habanero/) wrapper.
 
-- backend: **Python** (*habanero*) using *flask_socketio* and *flask*.
+- backend: **Python** (*habanero*) using *flask_socketio*, *gevent* and *flask*.
 
-- frontend (tests only): **Javascript** using *socket.io* and *express*.
+- frontend (tests only): **Javascript** using *socket.io* and *express*, *react*.
 
 The goal of this repository is to code a wrapper on the *Crossref API* client
 called *Habanero*.
@@ -23,7 +23,7 @@ TODO
 # Open another terminal and do this:
 python -m venv .venv
 source .venv/bin/activate
-cd src/backend/
+cd backend/
 pip install -r requirements.txt
 python app.py
 ```
@@ -32,8 +32,9 @@ python app.py
 
 ```bash
 # Open another terminal and do this:
-cd src/frontend/ && npm install
-
+cd frontend/
+npm install
+npm start
 # TODO
 ```
 
