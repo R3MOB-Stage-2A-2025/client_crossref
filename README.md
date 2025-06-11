@@ -23,8 +23,9 @@ TODO
 # Open another terminal and do this:
 python -m venv .venv
 source .venv/bin/activate
+cd src/backend/
 pip install -r requirements.txt
-cd src/backend/ && python app.py
+python app.py
 ```
 
 3. Tests only, use the frontend:
