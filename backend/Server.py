@@ -11,29 +11,40 @@ app.config['SECRET_KEY'] = BACKEND_SECRETKEY
 CORS(app, resources={r"/*": { "origins": "*" }})
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-@app.route("/http-call")
-def http_call():
-    data = { 'data': 'HTTP request Hello World!' }
-    return jsonify(data)
-
 @socketio.on("connect")
 def connected():
     """event listener when client connects to the backend"""
-    print(request.sid)
-    print("client has connected")
-    emit("connect", { "data": f"id: {request.sid} is connected" })
+    print(f'client number {request.sid} is connected')
 
 @socketio.on('data')
-def handle_message():
+def handle_message(data):
     """event listener when client types a message"""
     print("data from the front end: ", str(data))
-    emit("data", { 'data': data, 'id': request.sid }, broadcast=True)
+
+@socketio.on("search_query")
+def handle_search_query(query: str):
+    print(f"Search query received: {query}")
+
+    # For demonstration, dummy "search results":
+    users = [
+        {"id": 1, "name": "Alice Anderson"},
+        {"id": 2, "name": "Bob Brown"},
+        {"id": 3, "name": "Charlie Chaplin"},
+        {"id": 4, "name": "David Dawson"},
+        {"id": 5, "name": "Eve Evans"},
+    ]
+
+    results = [
+        user for user in users \
+        if query.lower() in user["name"].lower() \
+    ]
+
+    emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
 def disconnected():
     """event listener when client disconnects to the backend"""
-    print("user disconnected")
-    emit("disconnect", f"user {request.sid} disconnected", broadcast=True)
+    print(f'client number {request.sid} is disconnected')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=BACKEND_PORT)
