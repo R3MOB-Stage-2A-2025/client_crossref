@@ -52,5 +52,11 @@ TODO
 
 TODO
 
+## TODO
+
+- Migrate from `react-scripts` to `vite`, because *create-react-app* is
+deprecated (in 2025). This could help solving dependencie issues.
+Wait for the main *frontend* to migrate.
+
 ### EOF
 
