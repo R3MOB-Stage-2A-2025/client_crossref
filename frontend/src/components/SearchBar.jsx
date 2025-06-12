@@ -1,30 +1,26 @@
-import { useState } from "react";
+import "./SearchBar.css";
+
+import { useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 
-import "./SearchBar.css";
+import { socket } from "../socket";
 
 export const SearchBar = ({ setResults }) => {
     const [input, setInput] = useState("");
 
-    const fetchData = (value) => {
-        fetch("https://jsonplaceholder.typicode.com/users")
-            .then((response) => response.json())
-            .then((json) => {
-                const results = json.filter((user) => {
-                    return (
-                        value &&
-                        user &&
-                        user.name &&
-                        user.name.toLowerCase().includes(value)
-                    );
-                });
-                setResults(results);
-            });
-    };
+    useEffect(() => {
+        socket.on("search_results", (data) => {
+            setResults(data.results);
+        });
+
+        return () => {
+            socket.off("search_results");
+        };
+    }, [setResults]);
 
     const handleChange = (value) => {
         setInput(value);
-        fetchData(value);
+        socket.emit("search_query", value);
     };
 
     return (
@@ -38,3 +34,4 @@ export const SearchBar = ({ setResults }) => {
         </div>
     );
 };
+
