@@ -4,7 +4,7 @@
 
 - backend: **Python** (*habanero*) using *flask_socketio*, *gevent* and *flask*.
 
-- frontend (tests only): **Javascript** using *socket.io* and *express*, *react*.
+- frontend (tests only): **Javascript** using *socket.io* and *vite*, *react*.
 
 The goal of this repository is to code a wrapper on the *Crossref API* client
 called *Habanero*.
@@ -51,12 +51,6 @@ TODO
 3. **CORS**:
 
 TODO
-
-## TODO
-
-- Migrate from `react-scripts` to `vite`, because *create-react-app* is
-deprecated (in 2025). This could help solving dependencie issues.
-Wait for the main *frontend* to migrate.
 
 ### EOF
 
