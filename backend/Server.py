@@ -8,8 +8,55 @@ from dotenv import load_dotenv, dotenv_values
 
 load_dotenv()
 BACKEND_PORT: int = int(os.getenv("BACKEND_PORT"))
-BACKEND_SECRETKEY: int = os.getenv("BACKEND_SECRETKEY")
+BACKEND_SECRETKEY: str = os.getenv("BACKEND_SECRETKEY")
+
+HABANERO_BASEURL: str = os.getenv("HABANERO_BASEURL")
+HABANERO_APIKEY: str = os.getenv("HABANERO_APIKEY")
+HABANERO_MAILTO: str = os.getenv("HABANERO_MAILTO")
+HABANERO_TIMEOUT: int = int(os.getenv("HABANERO_TIMEOUT"))
 # </Retrieve environment variables>
+
+# Habanero Initialization
+from habanero import Crossref
+
+ua_string: str = None
+cr: Crossref = Crossref(
+    base_url = HABANERO_BASEURL,
+    api_key = HABANERO_APIKEY,
+    mailto = HABANERO_MAILTO,
+    ua_string = ua_string,
+    timeout = HABANERO_TIMEOUT # minutes
+)
+
+def habanero_query(query: str) -> dict[str, dict]:
+    """
+    :param query: `Title, author, DOI, ORCID iD, etc..`
+    :return: the result of ``habanero.Crossref.works()``.
+    """
+    filtering: dict = None,
+    offset: float = 1,
+    limit: float = 100,
+    sort: str = "relevance",
+    order: str = "asc",
+    facet: str | bool | None = None,
+    select: list[str] | str | None = [ "DOI", "title", "author" ],
+    cursor: str = "*",
+    progress_bar: bool = False
+
+    return cr.works(
+        query = query,
+        filter = filtering,
+        offset = offset,
+        limit = limit,
+        sort = sort,
+        order = order,
+        facet = facet,
+        select = select,
+        cursor = cursor,
+        progress_bar = progress_bar
+    )
+
+# </Habanero Initialization>
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = BACKEND_SECRETKEY
