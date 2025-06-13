@@ -2,9 +2,14 @@ from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
-# To put in a .env file
-BACKEND_PORT: int = 5001
-BACKEND_SECRETKEY: str = "lol123test!"
+# Retrieve environment variables.
+import os
+from dotenv import load_dotenv, dotenv_values
+
+load_dotenv()
+BACKEND_PORT: int = int(os.getenv("BACKEND_PORT"))
+BACKEND_SECRETKEY: int = os.getenv("BACKEND_SECRETKEY")
+# </Retrieve environment variables>
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = BACKEND_SECRETKEY
@@ -22,7 +27,7 @@ def handle_message(data):
     print("data from the front end: ", str(data))
 
 @socketio.on("search_query")
-def handle_search_query(query: str):
+def handle_search_query(query):
     print(f"Search query received: {query}")
 
     # For demonstration, dummy "search results":
