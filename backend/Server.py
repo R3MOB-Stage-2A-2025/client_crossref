@@ -1,3 +1,4 @@
+import httpx
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -13,48 +14,95 @@ BACKEND_SECRETKEY: str = os.getenv("BACKEND_SECRETKEY")
 HABANERO_BASEURL: str = os.getenv("HABANERO_BASEURL")
 HABANERO_APIKEY: str = os.getenv("HABANERO_APIKEY")
 HABANERO_MAILTO: str = os.getenv("HABANERO_MAILTO")
-HABANERO_TIMEOUT: int = int(os.getenv("HABANERO_TIMEOUT"))
+HABANERO_TIMEOUT: int = int(os.getenv("HABANERO_TIMEOUT")) # seconds
 # </Retrieve environment variables>
 
 # Habanero Initialization
-from habanero import Crossref
+from habanero import Crossref, RequestError
 
-ua_string: str = None
+xrate_limit: str = "X-Rate-Limit-Limit: 50"
+xrate_interval: str = "X-Rate-Limit-Interval: 1s"
+ua_string: str = xrate_limit + ";" + xrate_interval
+
 cr: Crossref = Crossref(
     base_url = HABANERO_BASEURL,
     api_key = HABANERO_APIKEY,
     mailto = HABANERO_MAILTO,
     ua_string = ua_string,
-    timeout = HABANERO_TIMEOUT # minutes
+    timeout = HABANERO_TIMEOUT
 )
 
-def habanero_query(query: str) -> dict[str, dict]:
+def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     """
     :param query: `Title, author, DOI, ORCID iD, etc..`
+    :param publisher: special parameter to find related publications.
+        this parameter is a concatenation of multiple keywords.
     :return: the result of ``habanero.Crossref.works()``.
     """
-    filtering: dict = None,
-    offset: float = 1,
-    limit: float = 100,
-    sort: str = "relevance",
-    order: str = "asc",
-    facet: str | bool | None = None,
-    select: list[str] | str | None = [ "DOI", "title", "author" ],
-    cursor: str = "*",
+    filtering: dict = {
+        #'type': 'journal-article',
+    }
+
+    # "Don't use *rows* and *offset* in the */works* route.
+    # They are very expansive and slow. Use cursors instead."
+    offset: float = None
+
+    limit: float = 20 # Default is 20
+    sort: str = "relevance"
+    order: str = "asc"
+
+    facet: str | bool | None = None # "relation-type:5"
+
+    # What could happen:
+    #   - the *abstract* is located in the *title* section.
+    #   - *subject* is almost never present.
+    #   - the *issn-value*: is too generic. (ex: "Electronic")
+    #   - there could be A LOT of authors. (too many).
+    select: list[str] | str | None = [
+        "DOI",
+        #"type",
+        #"container-title",
+        #"issn-type",
+        #"subject",
+        "title",
+        #"abstract",
+        #"publisher",
+        #"author",
+        "created",
+        "URL",
+        #"references-count", # ]
+        #"reference",        # ] what the publications is citing.
+    ]
+
+    #cursor: str = "*"
+    cursor: str = None # Cursor can't be combined with *offset* or *sample*.
+    cursor_max: float = 100
+
     progress_bar: bool = False
 
-    return cr.works(
-        query = query,
-        filter = filtering,
-        offset = offset,
-        limit = limit,
-        sort = sort,
-        order = order,
-        facet = facet,
-        select = select,
-        cursor = cursor,
-        progress_bar = progress_bar
-    )
+    try:
+        return cr.works(
+            query = query,
+            filter = filtering,
+            offset = offset,
+            limit = limit,
+            sort = sort,
+            order = order,
+            facet = facet,
+            select = select,
+            cursor = cursor,
+            cursor_max = cursor_max,
+            progress_bar = progress_bar
+        )
+    except httpx.HTTPStatusError as e:
+        RequestError(e).__str__()
+        return None
+    except RuntimeError:
+        print(f'\
+RuntimeError for query="{query}".\n\
+HABANERO_TIMEOUT={HABANERO_TIMEOUT}\n'\
+        )
+        return None
 
 # </Habanero Initialization>
 
@@ -77,20 +125,8 @@ def handle_message(data):
 def handle_search_query(query):
     print(f"Search query received: {query}")
 
-    # For demonstration, dummy "search results":
-    users = [
-        {"id": 1, "name": "Alice Anderson"},
-        {"id": 2, "name": "Bob Brown"},
-        {"id": 3, "name": "Charlie Chaplin"},
-        {"id": 4, "name": "David Dawson"},
-        {"id": 5, "name": "Eve Evans"},
-    ]
-
-    results = [
-        user for user in users \
-        if query.lower() in user["name"].lower() \
-    ]
-
+    results: dict[str, dict] = habanero_query(query)
+    print(results)
     emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
