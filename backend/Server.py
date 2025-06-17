@@ -21,8 +21,8 @@ HABANERO_TIMEOUT: int = int(os.getenv("HABANERO_TIMEOUT")) # seconds
 # Habanero Initialization
 from habanero import Crossref, RequestError
 
-xrate_limit: str = "X-Rate-Limit-Limit: 50"
-xrate_interval: str = "X-Rate-Limit-Interval: 1s"
+xrate_limit: str = "" "X-Rate-Limit-Limit: 100"
+xrate_interval: str = "" "X-Rate-Limit-Interval: 1s"
 ua_string: str = xrate_limit + ";" + xrate_interval
 
 cr: Crossref = Crossref(
@@ -53,7 +53,7 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
     # They are very expansive and slow. Use cursors instead."
     offset: float = None
 
-    limit: float = 20 # Default is 20
+    limit: float = 10 # Default is 20
     sort: str = "relevance"
     order: str = "desc"
 
@@ -80,9 +80,9 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
         "reference",        # ] what the publication is citing.
     ]
 
-    #cursor: str = "*"
+    cursor: str = "*"
     cursor: str = None # Cursor can't be combined with *offset* or *sample*.
-    cursor_max: float = 100
+    cursor_max: float = 10
 
     progress_bar: bool = False
 
@@ -140,6 +140,7 @@ def handle_search_query(query: str, publisher: str = None):
         print(f"Publisher received: {publisher}")
 
     results: dict[str, dict] = habanero_query(query, publisher)
+    print(results)
     emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
