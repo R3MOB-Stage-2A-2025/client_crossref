@@ -1,4 +1,5 @@
 import httpx
+import re
 from flask import Flask, request, jsonify
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -36,9 +37,13 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     """
     :param query: `Title, author, DOI, ORCID iD, etc..`
     :param publisher: special parameter to find related publications.
-        this parameter is a concatenation of multiple keywords.
+        This parameter is usually the `container-title` of the response.
     :return: the result of ``habanero.Crossref.works()``.
     """
+    # Detect if the query is actually a concatenation of *DOI*s.
+    regex: str = r'10\.\d{4,9}/[\w.\-;()/:]+'
+    ids: list[str] = re.findall(regex, query)
+
     filtering: dict = {
         #'type': 'journal-article',
     }
@@ -47,9 +52,9 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     # They are very expansive and slow. Use cursors instead."
     offset: float = None
 
-    limit: float = 20 # Default is 20
+    limit: float = 1 # Default is 20
     sort: str = "relevance"
-    order: str = "asc"
+    order: str = "desc"
 
     facet: str | bool | None = None # "relation-type:5"
 
@@ -60,18 +65,18 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     #   - there could be A LOT of authors. (too many).
     select: list[str] | str | None = [
         "DOI",
-        #"type",
-        #"container-title",
-        #"issn-type",
-        #"subject",
+        "type",
+        "container-title",
+        "issn-type",
+        "subject",
         "title",
-        #"abstract",
-        #"publisher",
-        #"author",
+        "abstract",
+        "publisher",
+        "author",
         "created",
         "URL",
-        #"references-count", # ]
-        #"reference",        # ] what the publications is citing.
+        "references-count", # ]
+        "reference",        # ] what the publication is citing.
     ]
 
     #cursor: str = "*"
@@ -81,6 +86,11 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     progress_bar: bool = False
 
     try:
+        if len(ids) > 0:
+            return cr.works(
+                ids = ids
+            )
+
         return cr.works(
             query = query,
             filter = filtering,
@@ -92,7 +102,8 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
             select = select,
             cursor = cursor,
             cursor_max = cursor_max,
-            progress_bar = progress_bar
+            progress_bar = progress_bar,
+            publisher = publisher
         )
     except httpx.HTTPStatusError as e:
         RequestError(e).__str__()
@@ -126,7 +137,6 @@ def handle_search_query(query):
     print(f"Search query received: {query}")
 
     results: dict[str, dict] = habanero_query(query)
-    print(results)
     emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
