@@ -7,10 +7,12 @@ import { socket } from "../socket";
 
 export const SearchBar = ({ setResults }) => {
     const [input, setInput] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         socket.on("search_results", (data) => {
             setResults(data.results);
+            setLoading(false);
         });
 
         return () => {
@@ -18,19 +20,24 @@ export const SearchBar = ({ setResults }) => {
         };
     }, [setResults]);
 
-    const handleChange = (value) => {
-        setInput(value);
-        socket.emit("search_query", value);
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter" && !loading) {
+            setLoading(true);
+            socket.emit("search_query", input);
+        }
     };
 
     return (
         <div className="input-wrapper">
             <FaSearch id="search-icon" />
             <input
-                placeholder="Type to search..."
+                placeholder="DOI, Title, Abstract, Author, etc..."
                 value={input}
-                onChange={(e) => handleChange(e.target.value)}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                disabled={loading}
             />
+            {loading && <span className="loading">Searching...</span>}
         </div>
     );
 };
