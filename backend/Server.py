@@ -1,6 +1,6 @@
 import httpx
 import re
-from flask import Flask, request, jsonify
+from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
 
@@ -33,12 +33,13 @@ cr: Crossref = Crossref(
     timeout = HABANERO_TIMEOUT
 )
 
-def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
+def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
     """
     :param query: `Title, author, DOI, ORCID iD, etc..`
     :param publisher: special parameter to find related publications.
         This parameter is usually the `container-title` of the response.
-    :return: the result of ``habanero.Crossref.works()``.
+    :return: the result of ``habanero.Crossref.works()``. It is various *json*.
+    :return: the result is a string only if there is an error.
     """
     # Detect if the query is actually a concatenation of *DOI*s.
     regex: str = r'10\.\d{4,9}/[\w.\-;()/:]+'
@@ -52,7 +53,7 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
     # They are very expansive and slow. Use cursors instead."
     offset: float = None
 
-    limit: float = 1 # Default is 20
+    limit: float = 20 # Default is 20
     sort: str = "relevance"
     order: str = "desc"
 
@@ -106,14 +107,14 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict]:
             publisher = publisher
         )
     except httpx.HTTPStatusError as e:
-        RequestError(e).__str__()
-        return None
-    except RuntimeError:
-        print(f'\
-RuntimeError for query="{query}".\n\
-HABANERO_TIMEOUT={HABANERO_TIMEOUT}\n'\
-        )
-        return None
+        print(f'\n{e}\n')
+        return e.__str__()
+    except RequestError as e:
+        print(f'\n{e}\n')
+        return e.__str__()
+    except RuntimeError as e:
+        print(f'\n{e}\n')
+        return e.__str__()
 
 # </Habanero Initialization>
 
@@ -133,10 +134,12 @@ def handle_message(data):
     print("data from the front end: ", str(data))
 
 @socketio.on("search_query")
-def handle_search_query(query):
+def handle_search_query(query: str, publisher: str = None):
     print(f"Search query received: {query}")
+    if publisher != None:
+        print(f"Publisher received: {publisher}")
 
-    results: dict[str, dict] = habanero_query(query)
+    results: dict[str, dict] = habanero_query(query, publisher)
     emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
