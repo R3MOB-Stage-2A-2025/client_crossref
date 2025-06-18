@@ -14,6 +14,7 @@ function App() {
     useEffect(() => {
         socket.on("search_error", (data) => {
             setError(data.error || "Unknown Error detected.");
+            setLoading(false);
         });
 
         socket.on("search_results", (data) => {

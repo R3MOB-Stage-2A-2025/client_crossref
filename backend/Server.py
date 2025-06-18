@@ -101,9 +101,11 @@ def habanero_query(query: str, publisher: str = None) -> str:
 
     try:
         if len(ids) > 0:
-            return json.dumps(
-                cr.works(ids = ids)
-            )
+            # Here, there is only one result (wo `items`),
+            # but I want to get something generic in a `items` attribute.
+            result: dict[str, dict] = cr.works(ids = ids)
+            results: dict[str, dict] = { 'message': { 'items': [ result['message'] ] } }
+            return json.dumps(results)
 
         return json.dumps(
                 cr.works(
@@ -122,10 +124,10 @@ def habanero_query(query: str, publisher: str = None) -> str:
         )
     except httpx.HTTPStatusError as e:
         print(f'\n{e}\n')
-        return e.__str__()[:92]
+        return e.__str__()[:92] + " ..."
     except RequestError as e:
         print(f'\n{e}\n')
-        return e.__str__()[:92]
+        return e.__str__()[:92] + " ..."
     except RuntimeError as e:
         print(f'\n{e}\n')
         return e.__str__()
@@ -156,10 +158,10 @@ def handle_search_query(query: str, publisher: str = None):
     results: str = habanero_query(query, publisher)
     print(results)
 
-    emit("search_results", { 'results': results }, to=request.sid)
-
     if not results.startswith('{'):
         emit("search_error", { 'error': results }, to=request.sid)
+    else:
+        emit("search_results", { 'results': results }, to=request.sid)
 
 @socketio.on("disconnect")
 def disconnected():
