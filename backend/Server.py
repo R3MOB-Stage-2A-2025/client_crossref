@@ -108,10 +108,10 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
         )
     except httpx.HTTPStatusError as e:
         print(f'\n{e}\n')
-        return e.__str__()
+        return e.__str__()[:92]
     except RequestError as e:
         print(f'\n{e}\n')
-        return e.__str__()
+        return e.__str__()[:92]
     except RuntimeError as e:
         print(f'\n{e}\n')
         return e.__str__()
@@ -139,8 +139,14 @@ def handle_search_query(query: str, publisher: str = None):
     if publisher != None:
         print(f"Publisher received: {publisher}")
 
-    results: dict[str, dict] = habanero_query(query, publisher)
+    results: dict[str, dict] | str = habanero_query(query, publisher)
     print(results)
+
+    # When there is an error, the type of the message is always a string.
+    if type(results) == str:
+        print("ui")
+        emit("search_error", { "error": results }, to=request.sid)
+
     emit("search_results", { "results": results }, to=request.sid)
 
 @socketio.on("disconnect")
