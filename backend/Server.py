@@ -1,5 +1,6 @@
 import httpx
 import re
+import json
 from flask import Flask, request
 from flask_socketio import SocketIO, emit
 from flask_cors import CORS
@@ -33,13 +34,13 @@ cr: Crossref = Crossref(
     timeout = HABANERO_TIMEOUT
 )
 
-def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
+def habanero_query(query: str, publisher: str = None) -> str:
     """
     :param query: `Title, author, DOI, ORCID iD, etc..`
     :param publisher: special parameter to find related publications.
         This parameter is usually the `container-title` of the response.
     :return: the result of ``habanero.Crossref.works()``. It is various *json*.
-    :return: the result is a string only if there is an error.
+    :return: the result is a string, an error never starts with `{`.
     """
     # Detect if the query is actually a concatenation of *DOI*s.
     regex: str = r'10\.\d{4,9}/[\w.\-;()/:]+'
@@ -49,6 +50,11 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
         #'type': 'journal-article',
     }
 
+    # TODO: this thing does not work I don't know why.
+    if publisher != None:
+        filtering['container-title'] = publisher
+    # </TODO>
+
     # "Don't use *rows* and *offset* in the */works* route.
     # They are very expansive and slow. Use cursors instead."
     offset: float = None
@@ -57,7 +63,12 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
     sort: str = "relevance"
     order: str = "desc"
 
+    # TODO: find a way to retrieve the publication abstract,
+    #       there are too many retrieved publications for which only
+    #       the title is public.
+    #       Need to recursively retrieve publications from references etc..
     facet: str | bool | None = None # "relation-type:5"
+    # </TODO>
 
     # What could happen:
     #   - the *abstract* is located in the *title* section.
@@ -80,31 +91,34 @@ def habanero_query(query: str, publisher: str = None) -> dict[str, dict] | str:
         "reference",        # ] what the publication is citing.
     ]
 
+    # TODO: add cursors on the *frontend*.
     cursor: str = "*"
     cursor: str = None # Cursor can't be combined with *offset* or *sample*.
     cursor_max: float = 10
+    # <TODO>
 
     progress_bar: bool = False
 
     try:
         if len(ids) > 0:
-            return cr.works(
-                ids = ids
+            return json.dumps(
+                cr.works(ids = ids)
             )
 
-        return cr.works(
-            query = query,
-            filter = filtering,
-            offset = offset,
-            limit = limit,
-            sort = sort,
-            order = order,
-            facet = facet,
-            select = select,
-            cursor = cursor,
-            cursor_max = cursor_max,
-            progress_bar = progress_bar,
-            publisher = publisher
+        return json.dumps(
+                cr.works(
+                query = query,
+                filter = filtering,
+                offset = offset,
+                limit = limit,
+                sort = sort,
+                order = order,
+                facet = facet,
+                select = select,
+                cursor = cursor,
+                cursor_max = cursor_max,
+                progress_bar = progress_bar
+            )
         )
     except httpx.HTTPStatusError as e:
         print(f'\n{e}\n')
@@ -139,15 +153,13 @@ def handle_search_query(query: str, publisher: str = None):
     if publisher != None:
         print(f"Publisher received: {publisher}")
 
-    results: dict[str, dict] | str = habanero_query(query, publisher)
+    results: str = habanero_query(query, publisher)
     print(results)
 
-    # When there is an error, the type of the message is always a string.
-    if type(results) == str:
-        print("ui")
-        emit("search_error", { "error": results }, to=request.sid)
+    emit("search_results", { 'results': results }, to=request.sid)
 
-    emit("search_results", { "results": results }, to=request.sid)
+    if not results.startswith('{'):
+        emit("search_error", { 'error': results }, to=request.sid)
 
 @socketio.on("disconnect")
 def disconnected():

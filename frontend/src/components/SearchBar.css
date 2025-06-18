@@ -20,9 +20,9 @@ input {
     background-color: white;
     border: none;
     height: 100%;
-    font-size: 2.5rem;
+    font-size: 3rem;
     width: 100%;
-    margin-left: 5px;
+    margin-left: 10px;
 }
 
 input:focus {
@@ -31,4 +31,5 @@ input:focus {
 
 #search-icon {
     color: royalblue;
+    font-size: 1.5rem;
 }

@@ -4,13 +4,17 @@ import "./SearchResultsList.css";
 import { SearchResult } from "./SearchResult";
 
 
-export const SearchResultsList = ({ results }) => {
-    const items = results?.message?.items ?? [];
+export const SearchResultsList = ({ results, loading, setLoading }) => {
+    const items = results?.['message']?.['items'] ?? [];
 
     return (
         <div className="results-list">
-            {items.map((item, idx) => (
-                <SearchResult key={item.DOI || idx} item={item} />
+            {items.map((item) => (
+                <SearchResult
+                    item={item}
+                    loading={loading}
+                    setLoading={setLoading}
+                />
             ))}
         </div>
     );

@@ -1,28 +1,17 @@
 import "./SearchBar.css";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FaSearch } from "react-icons/fa";
 
 import { socket } from "../socket";
 
-export const SearchBar = ({ setResults }) => {
+export const SearchBar = ({ setResults, setError, setLoading, loading }) => {
     const [input, setInput] = useState("");
-    const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        socket.on("search_results", (data) => {
-            setResults(data.results);
-            setLoading(false);
-        });
-
-        return () => {
-            socket.off("search_results");
-        };
-    }, [setResults]);
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" && !loading) {
             setLoading(true);
+            setError(false);
             socket.emit("search_query", input);
         }
     };

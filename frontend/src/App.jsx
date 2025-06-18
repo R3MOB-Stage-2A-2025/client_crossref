@@ -8,10 +8,18 @@ import { socket } from "./socket";
 
 function App() {
     const [results, setResults] = useState([]);
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        socket.on("search_error", (data) => {
+            setError(data.error || "Unknown Error detected.");
+        });
+
         socket.on("search_results", (data) => {
-            setResults(data.results);
+            setLoading(false);
+            setError(null);
+            setResults(JSON.parse(data.results));
         });
 
         return () => {
@@ -21,9 +29,24 @@ function App() {
 
     return (
         <div className="App">
+            { error &&
+                <div className="error-wrapper">
+                    { error }
+                </div>
+            }
             <div className="search-bar-container">
-                <SearchBar setResults={setResults} />
-                <SearchResultsList results={results} />
+                <SearchBar
+                    setResults={setResults}
+                    setError={setError}
+                    setLoading={setLoading}
+                    loading={loading}
+                />
+                <SearchResultsList
+                    setResults={setResults}
+                    results={results}
+                    setLoading={setLoading}
+                    loading={loading}
+                />
             </div>
         </div>
     );
