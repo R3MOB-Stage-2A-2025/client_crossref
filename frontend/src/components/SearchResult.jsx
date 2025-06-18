@@ -7,9 +7,11 @@ export const SearchResult = ({ item, loading, setLoading }) => {
     const doi = item?.['DOI'] || "No DOI";
     const url = item?.['URL'] || `https://doi.org/${doi}`;
 
-    const authors = item?.['author'].map((a) =>
+    const authors = item?.['author']
+        ? item?.['author'].map((a) =>
         [a.given, a.family].filter(Boolean).join(" ")
-    ).join(", ") || "No authors";
+    ).join(", ")
+        : "No authors";
 
     const abstract = item['abstract']
         ? item['abstract'].replace(/<\/?jats:[^>]+>/g, '')

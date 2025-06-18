@@ -9,8 +9,9 @@ export const SearchResultsList = ({ results, loading, setLoading }) => {
 
     return (
         <div className="results-list">
-            {items.map((item) => (
+            {items.map((item, idx) => (
                 <SearchResult
+                    key={idx}
                     item={item}
                     loading={loading}
                     setLoading={setLoading}
