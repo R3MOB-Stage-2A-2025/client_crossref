@@ -5,4 +5,3 @@ gevent==25.5.1
 dotenv==0.9.9
 habanero==2.3.0
 httpx==0.28.1
-re==2.2.1

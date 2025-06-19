@@ -29,7 +29,7 @@ python -m venv .venv
 source .venv/bin/activate
 cd backend/
 pip install -r requirements.txt
-python app.py
+python Server.py
 ```
 
 3. Tests only, use the frontend:
@@ -38,7 +38,7 @@ python app.py
 # Open another terminal and do this:
 cd frontend/
 npm install
-npm start
+npm run dev
 # TODO
 ```
 
