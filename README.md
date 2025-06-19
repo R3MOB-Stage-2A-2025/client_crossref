@@ -56,5 +56,15 @@ TODO
 
 TODO
 
+## TODO
+
+- Should use `jsonify()` from *Flask* to return *json* file.
+
+- Should verify the request status such as ``if (response.ok == 1)``...
+
+- Add *CORS*.
+
+- (Open question): How to prevent from *denial of services*?
+
 ### EOF
 
